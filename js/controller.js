@@ -54,7 +54,11 @@ app.controller("MainController", function(BookTest, BookService, $http){
 		//assumes the method has been called as such:
 		//main.addNewComment(brief ** which is an object **)
 
-		BookTest.addComment(book, vm.newComment);
+		if(!vm.newComment){
+			BookTest.addComment(book, "Bookmark!");
+		}else{
+			BookTest.addComment(book, vm.newComment);
+		};
 		vm.newComment = null;
 	};
 
