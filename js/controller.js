@@ -1,107 +1,128 @@
-app.controller("MainController", function(){
+//NEW DIRECTIVE
 
+//eventually the structure would look like this:
+
+/*
+main page
+
+|
+v
+
+active book directive
+
+|
+v
+
+count directive and/or comments directive
+
+*/
+
+//If I'm not totally crazy, there should be a seperate controller for the bottom
+//show all section, using the same factory.
+
+// app.directive('nowPlaying', function(){
+// 	return {
+// 		restrict: 'EA',
+// 		scope: {},
+// 		templateUrl: 'nowPlaying.html',
+// 		link: function(scope, elem, attrs){
+
+// 		}
+// 	};
+// });
+
+
+//book factory
+
+app.controller("MainController", function(BookTest, BookService, $http){
+	console.log("Controller Active");
 	var vm = this;
+	vm.books = BookTest.list;
+	vm.selects = [];
 
-	vm.audiobooks = [{
-		"name": "Days of Fire",
-		"type": "Audiobook",
-		"image": "img/days-of-fire.jpg",
-		"percentCompleted": 50,
-		"now": true,
-		comments: []
-	},
+	vm.addNewBook = function(bookObj){
 
-	{
-		"name": "The Big Chill",
-		"type": "Audiobook",
-		"image": "img/days-of-fire.jpg",
-		"percentCompleted": 75,		
-		"now": false,
-		comments: []		
-	}
+		//still doesn't take into account type of book
+		//this will be solved by passing typeModel as argument
 
-	];
+		BookTest.removeActiveBook();
+		BookTest.add(bookObj);
+	};
 
-	vm.printbooks = [{
-		"name": "The Sun Also Rises",
-		"type": "Print",
-		"image": "img/the-sun-also-rises.jpg",
-		"percentCompleted": 80,
-		"now": true,
-		comments: [],
-		isCollapsed: true
-	}];
+	vm.addNewComment = function(book){
 
-	vm.briefs = [{
-		"name": "Where the Bodies are Buried",
-		"type": "Brief",
-		"image": "img/new-yorker.png",
-		"percentCompleted": 50,
-		now: true,
-		comments: [],
-		isCollapsed: true
-	}];
+		//assumes the method has been called as such:
+		//main.addNewComment(brief ** which is an object **)
 
+		BookTest.addComment(book, vm.newComment);
+		vm.newComment = null;
+	};
+
+	vm.showAll = function(){
+
+		if(!vm.selects.length){
+
+		vm.selects = vm.books;
+		}else{
+			vm.selects = [];
+		};
+	};
+
+	vm.setNewActive = function(book){
+		BookTest.removeActiveBook();
+
+		BookTest.setActiveBook(book);
+
+		vm.selects = [];
+	};
+
+	
 	vm.increaseCount = function(input){
 		input.percentCompleted++;
 	};
+
 	vm.decreaseCount = function(input){
 		input.percentCompleted--;
 	};
-	
-	vm.newBook = {};
-	vm.selects = {};
-    vm.newComment = null;
-    vm.isCollapsed = true;
 
 
-	vm.addBook = function(){
+	/*Google Books API*/
 
-		var newBookType = vm.newBook.bookType;
-		console.log(vm[newBookType]);
+	//test term
+	vm.searchTerm = '';
+	vm.bookResults = [];
 
-		for(i = 0; i <= vm[newBookType].length - 1; i++){
-			console.log(vm[newBookType][i].now);
-			if(vm[newBookType][i].now === true){
-				vm[newBookType][i].now = false;
-			};
-		};
-		// // var x = his will be drawn from the view and used as the book type;
-            vm[newBookType].push({
-            	name: vm.newBook.name,
-            	image: "img/new-yorker.png",
-            	percentCompleted: 0,
-            	now: true,
-				comments: []
-            });
-          vm.newBook = {};
-        };
+	vm.search = function(){
+		console.log("Search Function Triggered");
 
-    vm.showAll = function(input){
-    	console.log(vm.selects);
-    	vm.selects = vm[input];
-    	console.log(vm.selects[0].name);
-    };
+		BookService.get({ q: vm.searchTerm }, function(response){
+			vm.bookResults = response.items;
 
-    vm.setAsActive = function(index){
-    	console.log(index);
+			console.log(vm.bookResults[0].volumeInfo);
 
-		for(i = 0; i <= vm.selects.length - 1; i++){
-			if(vm.selects[i].now === true){
-				vm.selects[i].now = false;
-			}; 
-		};
+			vm.addNewBook(vm.bookResults[0].volumeInfo);
+		});
 
-		index.now = true; 
-		vm.selects = {}; 	
-    };
+		vm.searchTerm = '';
+	};
+
+	//typeahead
+  	vm.getBook = function(val) {
+    return $http.get('https://www.googleapis.com/books/v1/volumes', {
+      params: {
+        q: val,
+        key: 'AIzaSyBYR5v3uPChhku2lF7Db_2ausuHLkQqlUQ'
+      }
+    }).then(function(response){
+   	//return just the title of the book;
+      return response.data.items.map(function(item){
+        return item.volumeInfo.title;
+      });
+    });
+ 	};
 
 
-    vm.addComment = function(input){
-    	if(vm.newComment !== null)
-    	input.comments.push(vm.newComment);
-    	console.log(input.comments);
-    	vm.newComment = null;
-    };
+ 	//testers timeline
+ 	
 
 });
